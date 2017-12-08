@@ -8,12 +8,6 @@ height: 980
 
 
 
-Logistics
-========================================================
-
-Survey from last meet <https://goo.gl/forms/WFxirO7ldRh5I5VF2>.
-
-
 Factors
 ========================================================
 - Factor variable is a variable that takes some limited number of different values.
