@@ -1,0 +1,11 @@
+---
+title: "Demo"
+output: html_notebook
+---
+
+```{r exec=TRUE}
+library(webvrr)
+library(magrittr)
+
+webvrr() %>% addInnerTexturedSphere(texture = 'https://farm6.staticflickr.com/5727/20514018502_3d8edf77a4_o_d.jpg', `repeat` = FALSE)
+```
