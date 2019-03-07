@@ -1,0 +1,228 @@
+---
+title: "Reproducible Report Template"
+output: html_notebook
+--- 
+
+
+The purpose of this template is to recap some of the concepts covered in the course and also to provide a resource of code snippets that will be useful for your course project (and hopefully other future R projects!)
+
+## How to get un-stuck
+
+As you'll prepare this report, you'll likely encounter strange errors and get stuck multiple times. **That's normal and there's no way around it as you learn**. The basic approach for getting un-stuck is to spend a *limited* amount of time *actively* looking for the solution and then *asking for help*. 
+
+Two common scenarios, and a systematic way to troubleshoot are:
+
+1. You encounter an unexpected result or error
+  1. Check "spelling" - missing or extra quotes, commas, parentheses; misspelled function names
+  2. Read the error message and try to make sense of it
+  3. Google the error message (cut and paste!)
+2. You know what you want to do but don't know how to do it in R
+  1. Consult a relevant RStudio Cheat Sheet (https://www.rstudio.com/resources/cheatsheets/)
+  2. Try Google (StackOverflow pages often have helpful info)
+  3. Do a Datacamp tutorial (great for a refresher!)
+
+Asking good questions when you get stuck is an art in an of itself. I recommend the following formula:
+
+>  I tried to accomplish (goal) so I tried this code: 
+>  (copy and paste the code here)
+>  
+>  I expected this: ...
+>  
+>  Instead I get this result / error: 
+>  (copy and paste the result or error message)
+
+
+
+Below you'll see the *setup* chunk. Run it (by clicking the green triangle) to load the *tidyverse* and *lubridate* packages both of which you'll likely use in your report.
+
+Remember that adding the `include=FALSE` *chunk option* will prevent this code chunk from showing up in your rendered document (i.e. what you'll see when you click *Preview*) if that's what you want.
+
+```{r setup}
+library(tidyverse)
+library(lubridate)
+```
+
+
+## Background and Objectives
+
+This section should address the following questions:
+
+* What is the question to be addressed by the project?
+* How could addressing this question change patient management and/or further generalizable knowledge?
+  * What's the point of doing this analysis? 
+  * Would anyone else really care about the results?
+* What are the first 1-2 key graphs or statistics that you'd like to generate?
+
+
+## Data Acquisition
+
+This section should contain the following:
+
+* General properties of the data set
+* Code Book (see below)
+* For data files:
+  * Origin, with references
+  * File name and file format
+
+The code in this section should accomplish the following tasks:
+
+1. Import data file
+2. Isolate data of interest
+
+### Import data file
+
+#### CSV file
+
+The following sample code imports the CSV file named `my_data.csv` into the data frame `my_data`. Remember that the assignment operator `<-` plugs the output of the function on the right into the object on the left. 
+
+```{r}
+my_data <- read_csv("my_data.csv")
+```
+
+#### Excel file
+
+```{r}
+library(readxl)
+my_data <- read_excel("my_data.xlsx")
+```
+
+### Isolate data of interest
+
+Look at the columns of your dataframe. Which ones do you need for your analysis? Do you want to analyze a subset of your data, e.g. only the data from the last year?
+
+Remember that *tidy functions* always:
+
+1. Take a data frame as their first argument; and
+2. Return a data frame.
+
+These two properties let you link together tidy functions in a pipeline with the *pipe operator* `%>%`.
+
+`select()` retains columns by name and `filter()` retains rows by a logical condition. 
+
+The following sample code would select the `Patient_Age`, `Patient_Sex`, and `Date_of_Collection` columns and then filter the rows such that only those rows remain in which `Date_of_Collection` is within 2017. The `arrange()` function would then sort rows by `Date_of_Collection`.
+
+```{r query}
+my_data <- my_data %>%
+  select(Patient_Age,
+         Patient_Sex,
+         Date_of_Collection) %>%
+  filter(year(Date_of_Collection) == "2017") %>%
+  arrange(Date_of_Collection)
+```
+
+### Code book
+
+The code book is where you document concisely document the data contained in each column. Be sure to include enough detail to avoid misunderstandings. For example:
+
+- MRN. The patient medical record number at HUP.
+- AGE. Patient age at the time the specimen was collected.
+
+
+## Data Exploration and Cleaning
+
+* Convert messy data to tidy
+    * Each variable in its own column
+    * Each case in its own row
+    * Each value in its own cell
+* Check for missing values
+* Then, go column by column and do the following:
+    * Verify (and if necessary, convert) data type
+        * Numeric variables should be integer or numeric
+        * Date-time variables should be Date or POSIXct
+        * Categorial variables should be factor
+        * All others, in general, should be character
+    * Visualize distribution
+        * Numeric variables: histogram
+        * Categorical variables: bar graph or numerical summary
+        * Character variables: inspect a small sample
+    * Comment on whether the data is as expected
+        * Range and shape of distribution
+        * Number and breakdown of categories
+        * Properties of character variables
+    * Explain discrepancies
+    * Resolve data problems
+
+#### Missing values
+
+The following code chunk shows the number of missing values for each column. 
+
+```{r}
+my_data %>%
+    map_df(function(x) sum(is.na(x))) %>%
+    gather(column, NAs)
+```
+
+#### Numeric variables
+
+`variable_1` is an **integer** column, which is appropriate.
+
+```{r}
+ggplot(data = my_data) + 
+    geom_histogram(mapping = aes(x = variable_1),
+                   binwidth = 1)
+```
+
+#### Character variables
+
+`variable_3` is a **character** column, which is appropriate.
+
+```{r}
+set.seed(1)
+my_data %>%
+    sample_n(10) %>%
+    pull(variable_3)
+```
+
+#### Convert from character to factor
+
+`variable_4` is a **character** column, but since it represents a categorial variable, convert it to a **factor**.
+
+```{r}
+my_data <- my_data %>%
+    mutate(variable_4 = as_factor(variable_4))
+
+# code to create a data summary
+```
+
+#### Convert from character to integer
+
+`variable_5` is a **character** column, but since it represents a numeric variable, convert it to **integer**.
+
+Before doing so, examine any rows that do *not* contain an integer value:
+
+```{r}
+my_data %>%
+    filter(is.na(as.integer(variable_5))) %>%
+    group_by(variable_5) %>%
+    summarize(n = n()) %>% 
+    arrange(desc(n))
+```
+
+Now convert to integer and drop all rows in which `variable_5` had a non-numeric entry.
+
+```{r}
+my_data <- my_data %>%
+    mutate(variable_5 = as.integer(variable_5)) %>%
+    drop_na(variable_5)
+```
+
+## Visualization and Modeling
+
+This section will be specific for your analysis. 
+
+The basic template for creating a plot is 
+
+```{r}
+ggplot(data = my_data) +
+  geom_function(mapping = aes(mappings))
+```
+
+- where `my_data` is a tidy data frame,
+- geom_function is a "geom" function (like geom_histogram()), and
+- mappings map columns of the data frame to features on the graph (like x, y, or color)
+
+You might want to complete the DataCamp course "Intro to the Tidyverse" to review ggplot and keep the ggplot cheat sheet on hand!
+
+## Summary and Conclusions
+
+This is a good place to recap each important result and draw larger conclusions.
